@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Policy Classification System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1f2937;
+            --secondary: #0f766e;
+            --accent: #06b6d4;
+            --success: #059669;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --light: #f3f4f6;
+            --border: #e5e7eb;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            color: var(--primary);
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        header p {
+            opacity: 0.95;
+            font-size: 0.95em;
+        }
+
+        .workflow-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border);
+        }
+
+        .panel h2 {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--secondary);
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            background: rgba(15, 118, 110, 0.02);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent);
+            background: rgba(6, 182, 212, 0.05);
+        }
+
+        .upload-zone.active {
+            border-color: var(--success);
+            background: rgba(5, 150, 105, 0.08);
+        }
+
+        .upload-icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-item {
+            padding: 12px;
+            background: var(--light);
+            border-left: 3px solid var(--accent);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .file-item.processed {
+            border-left-color: var(--success);
+            background: rgba(5, 150, 105, 0.06);
+        }
+
+        .file-name {
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+
+        .file-status {
+            font-size: 0.8em;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--warning);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.success {
+            background: var(--success);
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--secondary), var(--accent));
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(15, 118, 110, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--light);
+            color: var(--primary);
+            border: 1px solid var(--border);
+            flex: 1;
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .metadata-card {
+            background: var(--light);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--accent);
+            transition: all 0.3s ease;
+        }
+
+        .metadata-card:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .metadata-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .metadata-field {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 0.85em;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .metadata-field:last-child {
+            border-bottom: none;
+        }
+
+        .metadata-label {
+            font-weight: 600;
+            color: var(--secondary);
+        }
+
+        .metadata-value {
+            color: #4b5563;
+            font-family: 'Courier New', monospace;
+            background: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            max-width: 200px;
+            text-align: right;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .metadata-value.empty {
+            color: var(--warning);
+            font-style: italic;
+        }
+
+        .log-container {
+            background: #1a1a1a;
+            color: #d1d5db;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8em;
+            padding: 15px;
+            border-radius: 8px;
+            height: 350px;
+            overflow-y: auto;
+            line-height: 1.6;
+            border: 1px solid var(--border);
+        }
+
+        .log-entry {
+            margin-bottom: 4px;
+            padding: 2px 0;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .log-entry.success {
+            color: #86efac;
+        }
+
+        .log-entry.error {
+            color: #fca5a5;
+        }
+
+        .log-entry.info {
+            color: #7dd3fc;
+        }
+
+        .log-entry.warning {
+            color: #fbbf24;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: var(--light);
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            border-left: 3px solid var(--accent);
+        }
+
+        .stat-number {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: var(--secondary);
+        }
+
+        .stat-label {
+            font-size: 0.75em;
+            color: #6b7280;
+            margin-top: 3px;
+        }
+
+        .json-viewer {
+            background: #1a1a1a;
+            color: #d1d5db;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75em;
+            padding: 12px;
+            border-radius: 6px;
+            max-height: 250px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            border: 1px solid var(--border);
+            line-height: 1.5;
+        }
+
+        .json-key {
+            color: #93c5fd;
+        }
+
+        .json-string {
+            color: #86efac;
+        }
+
+        .json-value {
+            color: #fbbf24;
+        }
+
+        .folder-path {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            color: var(--secondary);
+            word-break: break-all;
+            margin-bottom: 10px;
+        }
+
+        .section-title {
+            font-weight: 600;
+            color: var(--secondary);
+            margin-top: 20px;
+            margin-bottom: 12px;
+            font-size: 0.95em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 15px;
+        }
+
+        .tab {
+            padding: 10px 15px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: #6b7280;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .tab.active {
+            color: var(--secondary);
+            border-bottom-color: var(--accent);
+        }
+
+        .tab:hover {
+            color: var(--secondary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .download-btn {
+            background: var(--success);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.8em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--light);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--secondary), var(--accent));
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #9ca3af;
+        }
+
+        .empty-state-icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 1024px) {
+            .workflow-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏢 PDF Policy Classification System</h1>
+            <p>Automated keyword scanning & organization for NZ, AU, UK policies</p>
+        </header>
+
+        <div class="workflow-grid">
+            <!-- LEFT: UPLOAD & PROCESS -->
+            <div class="panel">
+                <h2>📤 Upload & Process</h2>
+
+                <div class="upload-zone" onclick="document.getElementById('pdfFiles').click()" id="uploadZone">
+                    <div class="upload-icon">📁</div>
+                    <p style="font-weight: 600; margin-bottom: 5px;">Drop PDFs here or click to upload</p>
+                    <p style="font-size: 0.85em; color: #6b7280;">Supported: PDF files (NZ, AU, UK policies)</p>
+                </div>
+
+                <input type="file" id="pdfFiles" multiple accept=".pdf" onchange="handleFileSelect()">
+
+                <div id="fileList"></div>
+
+                <div class="button-group">
+                    <button class="btn-primary" onclick="processFiles()">Step 1: Upload & Scan</button>
+                    <button class="btn-secondary" onclick="clearFiles()">Clear</button>
+                </div>
+
+                <div id="step1Stats" class="stats-row hidden">
+                    <div class="stat-box">
+                        <div class="stat-number" id="uploadedCount">0</div>
+                        <div class="stat-label">Files Uploaded</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="classifiedCount">0</div>
+                        <div class="stat-label">Classified</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="failedCount">0</div>
+                        <div class="stat-label">Unclassified</div>
+                    </div>
+                </div>
+
+                <button class="btn-primary" onclick="processMetadata()" style="margin-bottom: 10px;" id="step2Btn" disabled>Step 2: Create Metadata</button>
+                <button class="btn-secondary" onclick="downloadAllMetadata()" style="margin-bottom: 10px; background: var(--success); color: white; border: none;" id="downloadAllBtn" disabled>⬇️ Download All Metadata</button>
+                <button class="btn-primary" onclick="organizeFiles()" id="step3Btn" disabled>Step 3: Organize Files</button>
+            </div>
+
+            <!-- RIGHT: LOGS -->
+            <div class="panel">
+                <h2>📋 Execution Log</h2>
+                <div class="log-container" id="logContainer"></div>
+                <div style="margin-top: 15px; font-size: 0.8em; color: #6b7280;">
+                    <button class="btn-secondary" onclick="clearLogs()" style="width: 100%; padding: 8px;">Clear Logs</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- METADATA RESULTS -->
+        <div class="panel">
+            <h2>📊 Metadata Results & Files</h2>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('overview')">Overview</button>
+                <button class="tab" onclick="switchTab('metadata')">Metadata Files</button>
+                <button class="tab" onclick="switchTab('organization')">Organization</button>
+            </div>
+
+            <!-- OVERVIEW TAB -->
+            <div id="tab-overview" class="tab-content active">
+                <div class="empty-state" id="overviewContent">
+                    <div class="empty-state-icon">📁</div>
+                    <div>Upload and process PDFs to see results</div>
+                </div>
+            </div>
+
+            <!-- METADATA TAB -->
+            <div id="tab-metadata" class="tab-content">
+                <div id="metadataContent" class="empty-state">
+                    <div class="empty-state-icon">📋</div>
+                    <div>Metadata files will appear here</div>
+                </div>
+            </div>
+
+            <!-- ORGANIZATION TAB -->
+            <div id="tab-organization" class="tab-content">
+                <div id="organizationContent" class="empty-state">
+                    <div class="empty-state-icon">📂</div>
+                    <div>File organization preview will appear here</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== PHASE 2.5: SELECTIVE DETECTION (FIXES) =====
+        
+        // Known Insurers Dictionary (NZ, AU, UK) - Prioritised Order
+        const KNOWN_INSURERS = [
+            'AMI',
+            'AA Insurance',
+            'State Insurance',
+            'Tower',
+            'AIA',
+            'Southern Cross',
+            'Vero',
+            'FMG',
+            'NZI',
+            'NRMA',
+            'Suncorp',
+            'AXA',
+            'Aviva',
+            'Direct Line',
+            'Bupa',
+            'QBE',
+            'Argis',
+            'BIA',
+            'Castle',
+            'Allianz',
+            'IAG',
+            'IAG NZ'
+        ];
+
+        // ===== FIX 1: INSURER DETECTION (TOP OF DOCUMENT ONLY) =====
+        function detectInsurer(text) {
+            // Only check first 2000 chars (cover page)
+            const firstSection = text.substring(0, 2000).toUpperCase();
+            
+            for (let insurer of KNOWN_INSURERS) {
+                if (firstSection.includes(insurer.toUpperCase())) {
+                    return insurer;
+                }
+            }
+            
+            return 'Unknown';
+        }
+
+        // ===== FIX 2: IMPROVED INSURANCE LINE DETECTION =====
+        function detectLine(text) {
+            const textLower = text.toLowerCase();
+            
+            // Check in priority order (most specific first)
+            if (['professional indemnity', 'pi insurance', 'professional liability', 'accountants liability'].some(word => textLower.includes(word))) {
+                return 'Professional Indemnity';
+            }
+            
+            if (['farm insurance', 'agricultural', 'farming', 'rural property'].some(word => textLower.includes(word))) {
+                return 'Farm';
+            }
+            
+            if (['landlord', 'rental property', 'investment property', 'residential landlord'].some(word => textLower.includes(word))) {
+                return 'Landlord';
+            }
+            
+            if (['construction', 'builders indemnity', 'contract works'].some(word => textLower.includes(word))) {
+                return 'Construction';
+            }
+            
+            if (['car insurance', 'motor', 'vehicle insurance', 'auto insurance'].some(word => textLower.includes(word))) {
+                return 'Motor';
+            }
+            
+            if (['life insurance', 'life cover', 'life protection'].some(word => textLower.includes(word))) {
+                return 'Life';
+            }
+            
+            if (['health insurance', 'medical insurance', 'health cover'].some(word => textLower.includes(word))) {
+                return 'Health';
+            }
+            
+            if (['home insurance', 'contents insurance', 'house insurance', 'home & contents'].some(word => textLower.includes(word))) {
+                return 'Home & Contents';
+            }
+            
+            if (['travel insurance', 'trip insurance', 'travel cover'].some(word => textLower.includes(word))) {
+                return 'Travel';
+            }
+            
+            return 'Unknown';
+        }
+
+        // ===== FIX 3: PRODUCT NAME FROM TITLE TEXT =====
+        function detectProductName(text) {
+            // Get top 30 lines (cover page area)
+            const lines = text.split('\n').slice(0, 30);
+            
+            for (let line of lines) {
+                const trimmed = line.trim();
+                // Look for title-like text: reasonable length, not too short or long
+                if (trimmed.length > 10 && trimmed.length < 100 && !trimmed.includes('www')) {
+                    // Skip common boilerplate
+                    if (trimmed.toLowerCase().includes('policy') || 
+                        trimmed.toLowerCase().includes('insurance') ||
+                        trimmed.toLowerCase().includes('wording') ||
+                        trimmed.toLowerCase().includes('cover')) {
+                        return trimmed;
+                    }
+                }
+            }
+            
+            return 'General Policy';
+        }
+
+        function detectCountry(text) {
+            const textLower = text.toLowerCase();
+            
+            if (textLower.includes('new zealand') || 
+                textLower.includes('nz ') ||
+                textLower.includes(' nz') ||
+                textLower.includes('auckland') ||
+                textLower.includes('wellington')) {
+                return 'New Zealand';
+            }
+            
+            if (textLower.includes('australia') || 
+                textLower.includes(' au ') ||
+                textLower.includes('sydney') ||
+                textLower.includes('melbourne')) {
+                return 'Australia';
+            }
+            
+            if (textLower.includes('united kingdom') || 
+                textLower.includes('uk ') ||
+                textLower.includes(' uk') ||
+                textLower.includes('england') ||
+                textLower.includes('scotland')) {
+                return 'United Kingdom';
+            }
+            
+            return 'Unknown';
+        }
+
+        function buildFilename(metadata) {
+            const country = metadata.country.replace(/\s+/g, '_');
+            const insurer = metadata.insurer.replace(/\s+/g, '_');
+            const line = metadata.insurance_line.replace(/\s+/g, '_');
+            const product = metadata.product_name.replace(/\s+/g, '_').replace(/[^A-Za-z0-9_-]/g, '');
+            
+            return `${country}_${insurer}_${line}_${product}.pdf`;
+        }
+
+        let appState = {
+            files: [],
+            classified: [],
+            metadata: [],
+            filesProcessed: false,
+            metadataCreated: false
+        };
+
+        function addLog(message, type = 'info') {
+            const log = document.getElementById('logContainer');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const time = new Date().toLocaleTimeString();
+            entry.textContent = `[${time}] ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function handleFileSelect() {
+            const input = document.getElementById('pdfFiles');
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+            appState.files = Array.from(input.files);
+
+            if (appState.files.length === 0) return;
+
+            appState.files.forEach(file => {
+                const div = document.createElement('div');
+                div.className = 'file-item';
+                div.innerHTML = `
+                    <div>
+                        <div class="file-name">📄 ${file.name}</div>
+                        <div class="file-status" style="font-size: 0.8em; color: #6b7280; margin-top: 4px;">${(file.size / 1024).toFixed(1)} KB</div>
+                    </div>
+                    <div class="file-status">
+                        <span class="status-dot"></span>
+                        <span>Ready</span>
+                    </div>
+                `;
+                fileList.appendChild(div);
+            });
+        }
+
+        function scanPDF(text, filename) {
+            // PHASE 2.5: Selective detection (top 2000 chars only)
+            const frontPage = text.substring(0, 2000);
+
+            // FIX 1: Insurer from front page only (no fallback to full text)
+            let insurer = detectInsurer(frontPage);
+
+            // Country detection
+            let country = detectCountry(frontPage);
+            if (country === 'Unknown') {
+                country = detectCountry(text);
+            }
+
+            // FIX 2: Improved line detection (priority order)
+            let line = detectLine(text);
+
+            // FIX 3: Product name from title text (top 30 lines)
+            let product = detectProductName(text);
+
+            return {
+                country: country,
+                insurer: insurer,
+                insurance_line: line,
+                product_name: product
+            };
+        }
+
+        function processFiles() {
+            if (appState.files.length === 0) {
+                addLog('❌ No files selected', 'error');
+                return;
+            }
+
+            addLog(`🔄 PHASE 2.5: Processing ${appState.files.length} file(s) with selective detection...`, 'info');
+            appState.classified = [];
+
+            let processed = 0;
+            appState.files.forEach((file, index) => {
+                setTimeout(() => {
+                    // PHASE 2.5: Varied mock text to test different insurance types
+                    const mockTexts = [
+                        `Professional Indemnity Insurance Policy
+                        BIA Accountants
+                        This policy provides professional liability cover for accountants.
+                        Professional indemnity insurance with accountant specific covers.`,
+                        
+                        `Farm Extra Insurance
+                        Argis Insurance
+                        Agricultural and farming insurance policy.
+                        Covers farm buildings, rural property, and agricultural equipment.`,
+                        
+                        `Residential Landlord Policy
+                        Castle Insurance
+                        Landlord and rental property insurance.
+                        Investment property landlord cover for residential properties.`,
+                        
+                        `Construction Indemnity Cover
+                        AMI Building
+                        Contract works and builders indemnity.
+                        Construction and building project insurance protection.`,
+                        
+                        `Car Insurance – Policy Wording
+                        AMI Limited
+                        Motor vehicle insurance policy for New Zealand.
+                        Car insurance with comprehensive vehicle cover options.`
+                    ];
+                    
+                    // Cycle through different mock texts
+                    const mockText = mockTexts[index % mockTexts.length];
+                    
+                    const classified = scanPDF(mockText, file.name);
+
+                    classified.file_name = file.name;
+                    classified.original_filename = file.name;
+                    classified.source_url = 'local_upload';
+                    classified.download_date = new Date().toISOString().split('T')[0];
+                    classified.status = 'needs_review';
+                    classified.document_type = 'Policy Document';
+                    
+                    // Confidence based on completeness
+                    const isHighConfidence = classified.country !== 'Unknown' && 
+                                           classified.insurer !== 'Unknown' && 
+                                           classified.insurance_line !== 'Unknown';
+                    classified.confidence = isHighConfidence ? 'High' : 'Medium';
+                    
+                    // Generate structured filename
+                    if (classified.country !== 'Unknown' && classified.insurer !== 'Unknown') {
+                        classified.generated_filename = buildFilename(classified);
+                    } else {
+                        classified.generated_filename = null;
+                    }
+
+                    appState.classified.push(classified);
+                    processed++;
+
+                    addLog(`✅ Scanned: ${file.name}`, 'success');
+                    addLog(`   ├─ Country: ${classified.country}`, 'info');
+                    addLog(`   ├─ Insurer: ${classified.insurer}`, 'info');
+                    addLog(`   ├─ Line: ${classified.insurance_line}`, 'info');
+                    addLog(`   ├─ Product: ${classified.product_name}`, 'info');
+                    addLog(`   └─ Confidence: ${classified.confidence}`, 'info');
+
+                    if (classified.generated_filename) {
+                        addLog(`   📝 Generated: ${classified.generated_filename}`, 'success');
+                    }
+
+                    if (processed === appState.files.length) {
+                        appState.filesProcessed = true;
+                        document.getElementById('step1Stats').classList.remove('hidden');
+                        document.getElementById('uploadedCount').textContent = appState.files.length;
+                        document.getElementById('classifiedCount').textContent = appState.classified.filter(f => f.country !== 'Unknown' && f.insurer !== 'Unknown').length;
+                        document.getElementById('failedCount').textContent = appState.classified.filter(f => f.country === 'Unknown' || f.insurer === 'Unknown').length;
+                        
+                        document.getElementById('step2Btn').disabled = false;
+                        updateProgress();
+                        displayOverview();
+
+                        addLog(`✨ Step 1 Complete: ${appState.classified.length} files scanned with selective detection`, 'success');
+                    }
+                }, (index + 1) * 500);
+            });
+        }
+
+        function processMetadata() {
+            if (!appState.filesProcessed) {
+                addLog('❌ Complete Step 1 first', 'error');
+                return;
+            }
+
+            addLog(`🔄 PHASE 2: Creating production-clean metadata files...`, 'info');
+            appState.metadata = [];
+
+            let processed = 0;
+            appState.classified.forEach((file, index) => {
+                setTimeout(() => {
+                    // PHASE 2: Production-clean metadata structure
+                    const metadata = {
+                        original_filename: file.original_filename,
+                        generated_filename: file.generated_filename,
+                        country: file.country,
+                        insurer: file.insurer,
+                        insurance_line: file.insurance_line,
+                        product_name: file.product_name,
+                        document_type: file.document_type || 'Unknown',
+                        source_url: file.source_url,
+                        download_date: file.download_date,
+                        confidence: file.confidence,
+                        status: 'needs_review',
+                        created_at: new Date().toISOString()
+                    };
+
+                    const jsonFilename = file.file_name.replace('.pdf', '.json');
+                    appState.metadata.push({
+                        filename: jsonFilename,
+                        path: `./metadata/${jsonFilename}`,
+                        data: metadata
+                    });
+
+                    processed++;
+                    addLog(`✅ Created: ${jsonFilename}`, 'success');
+                    
+                    if (file.generated_filename) {
+                        addLog(`   └─ Will rename to: ${file.generated_filename}`, 'info');
+                    } else {
+                        addLog(`   └─ Rename pending: awaiting full classification`, 'warning');
+                    }
+
+                    if (processed === appState.classified.length) {
+                        appState.metadataCreated = true;
+                        document.getElementById('step3Btn').disabled = false;
+                        document.getElementById('downloadAllBtn').disabled = false;
+                        displayMetadata();
+                        updateProgress();
+                        addLog(`✨ Step 2 Complete: ${appState.metadata.length} metadata files with Phase 2 structure`, 'success');
+                        addLog(`📌 Production ready for Step 3: Organization with structured naming`, 'info');
+                    }
+                }, (index + 1) * 400);
+            });
+        }
+
+        function organizeFiles() {
+            if (!appState.metadataCreated) {
+                addLog('❌ Complete Step 2 first', 'error');
+                return;
+            }
+
+            addLog(`🔄 PHASE 1: Organizing files with structured naming...`, 'info');
+            let organized = [];
+
+            appState.metadata.forEach((meta, index) => {
+                setTimeout(() => {
+                    const data = meta.data;
+                    
+                    if (data.country === 'Unknown' || data.insurer === 'Unknown' || 
+                        data.insurance_line === 'Unknown' || data.product_name === 'Unknown') {
+                        addLog(`⏭️  Skipped: ${data.original_filename} (incomplete classification)`, 'warning');
+                        return;
+                    }
+
+                    // PHASE 1: Use generated filename for organized storage
+                    const generatedName = data.generated_filename || buildFilename(data);
+                    const folder = `policies/${data.country}/${data.insurer}/${data.insurance_line}/${data.product_name}`;
+                    const path = `${folder}/${generatedName}`;
+
+                    organized.push({
+                        original: data.original_filename,
+                        renamed: generatedName,
+                        source: `./raw_documents/${data.original_filename}`,
+                        destination: path,
+                        country: data.country,
+                        insurer: data.insurer,
+                        line: data.insurance_line,
+                        product: data.product_name
+                    });
+
+                    addLog(`✅ Organized: ${data.original_filename}`, 'success');
+                    addLog(`   ├─ Renamed to: ${generatedName}`, 'success');
+                    addLog(`   └─ → ${path}`, 'info');
+
+                    if (index === appState.metadata.length - 1) {
+                        displayOrganization(organized);
+                        updateProgress();
+                        addLog(`✨ Step 3 Complete: ${organized.length} files organized with structured names`, 'success');
+                    }
+                }, (index + 1) * 400);
+            });
+        }
+
+        function displayOverview() {
+            const content = document.getElementById('overviewContent');
+            let html = `
+                <div style="text-align: left;">
+                    <div class="stat-box" style="border-left-color: var(--success); margin-bottom: 15px;">
+                        <div style="font-weight: 600; color: var(--primary); margin-bottom: 8px;">✅ Upload Complete</div>
+                        <div style="font-size: 0.9em; color: #6b7280; line-height: 1.6;">
+                            <div>📁 Location: <code style="background: var(--light); padding: 2px 4px; border-radius: 3px;">./raw_documents/</code></div>
+                            <div style="margin-top: 5px;">📊 Files: ${appState.files.length}</div>
+                            <div>✨ Classified: ${appState.classified.filter(f => f.country !== 'Unknown').length}</div>
+                        </div>
+                    </div>
+            `;
+
+            appState.classified.forEach(file => {
+                const isClassified = file.country !== 'Unknown';
+                html += `
+                    <div class="metadata-card" style="${isClassified ? 'border-left-color: var(--success)' : 'border-left-color: var(--warning)'}">
+                        <div class="metadata-title">${file.file_name}</div>
+                        <div class="metadata-field">
+                            <span class="metadata-label">Country</span>
+                            <span class="metadata-value ${file.country === 'Unknown' ? 'empty' : ''}">${file.country}</span>
+                        </div>
+                        <div class="metadata-field">
+                            <span class="metadata-label">Insurer</span>
+                            <span class="metadata-value ${file.insurer === 'Unknown' ? 'empty' : ''}">${file.insurer}</span>
+                        </div>
+                        <div class="metadata-field">
+                            <span class="metadata-label">Line</span>
+                            <span class="metadata-value ${file.insurance_line === 'Unknown' ? 'empty' : ''}">${file.insurance_line}</span>
+                        </div>
+                        <div class="metadata-field">
+                            <span class="metadata-label">Product</span>
+                            <span class="metadata-value ${file.product_name === 'Unknown' ? 'empty' : ''}">${file.product_name}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            content.innerHTML = html;
+        }
+
+        function displayMetadata() {
+            const content = document.getElementById('metadataContent');
+            let html = '<div style="text-align: left;">';
+
+            appState.metadata.forEach((meta, index) => {
+                const data = meta.data;
+                const jsonStr = JSON.stringify(data, null, 2);
+                html += `
+                    <div class="metadata-card">
+                        <div class="metadata-title" style="display: flex; justify-content: space-between; align-items: center;">
+                            📋 ${meta.filename}
+                            <button class="download-btn" onclick="downloadMetadataJSON(${index})">⬇️ Download</button>
+                        </div>
+                        <div class="json-viewer">${escapeHtml(jsonStr)}</div>
+                        <div class="folder-path">${meta.path}</div>
+                        <div style="margin-top: 10px; font-size: 0.8em; color: #6b7280;">
+                            Status Lifecycle: needs_review → classified → organized
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            content.innerHTML = html;
+        }
+
+        function displayOrganization(organized) {
+            const content = document.getElementById('organizationContent');
+            let html = `
+                <div style="text-align: left;">
+                    <div class="stat-box" style="border-left-color: var(--success); margin-bottom: 15px;">
+                        <div style="font-weight: 600; color: var(--primary); margin-bottom: 8px;">📂 Organization Complete</div>
+                        <div style="font-size: 0.9em; color: #6b7280;">Base Path: <code style="background: var(--light); padding: 2px 4px; border-radius: 3px;">./policies/</code></div>
+                    </div>
+            `;
+
+            organized.forEach(item => {
+                html += `
+                    <div class="metadata-card">
+                        <div class="metadata-title">📄 ${item.original}</div>
+                        <div class="metadata-field">
+                            <span class="metadata-label">Renamed to</span>
+                            <span class="metadata-value" style="color: var(--success); font-weight: 600;">${item.renamed}</span>
+                        </div>
+                        <div class="metadata-field">
+                            <span class="metadata-label">Country</span>
+                            <span class="metadata-value">${item.country}</span>
+                        </div>
+                        <div class="metadata-field">
+                            <span class="metadata-label">Insurer</span>
+                            <span class="metadata-value">${item.insurer}</span>
+                        </div>
+                        <div class="metadata-field">
+                            <span class="metadata-label">Line</span>
+                            <span class="metadata-value">${item.line}</span>
+                        </div>
+                        <div class="metadata-field">
+                            <span class="metadata-label">Product</span>
+                            <span class="metadata-value">${item.product}</span>
+                        </div>
+                        <div class="folder-path" style="margin-top: 10px;">${item.destination}</div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            content.innerHTML = html;
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function updateProgress() {
+            let progress = 0;
+            if (appState.filesProcessed) progress = 33;
+            if (appState.metadataCreated) progress = 66;
+            if (document.getElementById('organizationContent').innerHTML !== '<div class="empty-state"><div class="empty-state-icon">📂</div><div>File organization preview will appear here</div></div>') progress = 100;
+            
+            document.getElementById('progressFill').style.width = progress + '%';
+        }
+
+        function clearFiles() {
+            document.getElementById('pdfFiles').value = '';
+            document.getElementById('fileList').innerHTML = '';
+            appState = { files: [], classified: [], metadata: [], filesProcessed: false, metadataCreated: false };
+            document.getElementById('step1Stats').classList.add('hidden');
+            document.getElementById('step2Btn').disabled = true;
+            document.getElementById('step3Btn').disabled = true;
+        }
+
+        function clearLogs() {
+            document.getElementById('logContainer').innerHTML = '';
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function downloadMetadataJSON(index) {
+            const meta = appState.metadata[index];
+            const data = meta.data;
+            const jsonStr = JSON.stringify(data, null, 2);
+            
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = meta.filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            addLog(`✅ Downloaded: ${meta.filename}`, 'success');
+        }
+
+        function downloadAllMetadata() {
+            if (appState.metadata.length === 0) {
+                addLog('❌ No metadata files to download', 'error');
+                return;
+            }
+
+            appState.metadata.forEach((meta, index) => {
+                setTimeout(() => {
+                    downloadMetadataJSON(index);
+                }, (index + 1) * 300);
+            });
+
+            addLog(`✅ Download started for ${appState.metadata.length} metadata files`, 'success');
+        }
+
+        window.addEventListener('load', () => {
+            addLog('🎯 PDF Classification System Ready', 'success');
+            addLog('👉 Upload PDFs to begin', 'info');
+        });
+    </script>
+</body>
+</html>
